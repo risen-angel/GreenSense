@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "author": "Katyaini Nath",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -96, "left": -4.76, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": -87.7, "left": -278.6, "attrs": {} },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -114.9,
+      "left": 157.8,
+      "attrs": { "temperature": "24.8", "humidity": "39.5" }
+    },
+    { "type": "wokwi-photoresistor-sensor", "id": "ldr1", "top": 70.4, "left": -268, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "pot1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "pot1:SIG", "esp:34", "green", [ "v0" ] ],
+    [ "pot1:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "dht1:VCC", "esp:3V3", "yellow", [ "v0" ] ],
+    [ "dht1:SDA", "esp:15", "limegreen", [ "v0" ] ],
+    [ "dht1:GND", "esp:GND.3", "cyan", [ "v0" ] ],
+    [ "ldr1:VCC", "esp:3V3", "purple", [ "h0" ] ],
+    [ "ldr1:GND", "esp:GND.1", "white", [ "h0" ] ],
+    [ "ldr1:AO", "esp:35", "magenta", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
