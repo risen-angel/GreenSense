@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>GreenSense Dashboard</title>
+
+  <!-- MQTT.js -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f5;
+      color: #1f2937;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: #163a2a;
+      color: white;
+      padding: 22px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand h1 {
+      font-size: 28px;
+    }
+
+    .brand p {
+      margin-top: 5px;
+      opacity: 0.75;
+      font-size: 14px;
+    }
+
+    .connection {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: rgba(255,255,255,0.1);
+      padding: 9px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      background: #f59e0b;
+      border-radius: 50%;
+    }
+
+    .dot.connected {
+      background: #4ade80;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 25px;
+    }
+
+    .section-title {
+      margin-bottom: 15px;
+      font-size: 20px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+      border: 1px solid #e5e7eb;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .icon {
+      font-size: 25px;
+    }
+
+    .label {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .value {
+      font-size: 31px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+
+    .unit {
+      font-size: 15px;
+      color: #6b7280;
+      font-weight: normal;
+    }
+
+    .level {
+      margin-top: 9px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #557064;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 25px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+      border: 1px solid #e5e7eb;
+    }
+
+    .panel h2 {
+      font-size: 18px;
+      margin-bottom: 18px;
+    }
+
+    .status {
+      padding: 18px;
+      border-radius: 12px;
+      background: #edf7ef;
+      border-left: 5px solid #3b8c55;
+    }
+
+    .status-title {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 5px;
+    }
+
+    .status-value {
+      font-size: 23px;
+      font-weight: bold;
+      color: #27643a;
+    }
+
+    .anomaly {
+      display: none;
+      background: #fff5e6;
+      border-left: 5px solid #f59e0b;
+      padding: 18px;
+      border-radius: 12px;
+    }
+
+    .anomaly.active {
+      display: block;
+    }
+
+    .anomaly h3 {
+      color: #a15c00;
+      margin-bottom: 8px;
+    }
+
+    .anomaly p {
+      margin: 6px 0;
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .normal {
+      background: #edf7ef;
+      border-left: 5px solid #3b8c55;
+      padding: 18px;
+      border-radius: 12px;
+    }
+
+    .history {
+      margin-top: 25px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 13px;
+    }
+
+    th {
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    .mqtt-box {
+      margin-top: 25px;
+      background: #17231d;
+      color: #d7f5df;
+      border-radius: 16px;
+      padding: 20px;
+      font-family: monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    .footer {
+      text-align: center;
+      color: #6b7280;
+      font-size: 12px;
+      padding: 25px;
+    }
+
+    @media (max-width: 900px) {
+      .cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 550px) {
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        padding: 18px;
+      }
+
+      .container {
+        padding: 0 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+
+    <div class="brand">
+      <h1>🌱 GreenSense</h1>
+      <p>Smart Environmental Monitoring System</p>
+    </div>
+
+    <div class="connection">
+      <span class="dot" id="connectionDot"></span>
+      <span id="connectionText">Connecting...</span>
+    </div>
+
+  </header>
+
+
+  <main class="container">
+
+    <h2 class="section-title">Live Environmental Data</h2>
+
+    <!-- SENSOR CARDS -->
+
+    <div class="cards">
+
+      <div class="card">
+        <div class="card-header">
+          <span class="label">Soil Moisture</span>
+          <span class="icon">🌱</span>
+        </div>
+
+        <div class="value" id="soilValue">--</div>
+
+        <div class="level" id="soilLevel">
+          Waiting for data
+        </div>
+      </div>
+
+
+      <div class="card">
+        <div class="card-header">
+          <span class="label">Light</span>
+          <span class="icon">☀️</span>
+        </div>
+
+        <div class="value" id="lightValue">--</div>
+
+        <div class="level" id="lightLevel">
+          Waiting for data
+        </div>
+      </div>
+
+
+      <div class="card">
+        <div class="card-header">
+          <span class="label">Temperature</span>
+          <span class="icon">🌡️</span>
+        </div>
+
+        <div class="value">
+          <span id="temperatureValue">--</span>
+          <span class="unit">°C</span>
+        </div>
+
+        <div class="level" id="temperatureLevel">
+          Waiting for data
+        </div>
+      </div>
+
+
+      <div class="card">
+        <div class="card-header">
+          <span class="label">Humidity</span>
+          <span class="icon">💧</span>
+        </div>
+
+        <div class="value">
+          <span id="humidityValue">--</span>
+          <span class="unit">%</span>
+        </div>
+
+        <div class="level" id="humidityLevel">
+          Waiting for data
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- INFERENCE + ANOMALY -->
+
+    <div class="main-grid">
+
+      <div class="panel">
+
+        <h2>Environmental Status</h2>
+
+        <div class="status">
+
+          <div class="status-title">
+            CURRENT INFERENCE
+          </div>
+
+          <div class="status-value" id="statusValue">
+            Waiting for sensor data
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="panel">
+
+        <h2>System Analysis</h2>
+
+        <div class="normal" id="normalBox">
+
+          <strong>System Normal</strong>
+
+          <p id="normalText">
+            Waiting for sensor data...
+          </p>
+
+        </div>
+
+
+        <div class="anomaly" id="anomalyBox">
+
+          <h3>⚠ Anomaly Detected</h3>
+
+          <p>
+            <strong>Description:</strong>
+            <span id="anomalyDescription"></span>
+          </p>
+
+          <p>
+            <strong>Suggested solution:</strong>
+            <span id="anomalySolution"></span>
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- HISTORY -->
+
+    <div class="panel history">
+
+      <h2>Recent Readings</h2>
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Soil</th>
+            <th>Light</th>
+            <th>Temp.</th>
+            <th>Humidity</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody id="historyBody">
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+    <!-- MQTT -->
+
+    <div class="mqtt-box">
+
+      <div>MQTT Topic: greensense/status</div>
+
+      <div id="mqttMessage">
+        Waiting for MQTT message...
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <footer class="footer">
+    GreenSense • ESP32 + Wokwi + MQTT
+  </footer>
+
+
+<script>
+
+  // ==================================================
+  // MQTT CONFIGURATION
+  // ==================================================
+
+  const MQTT_HOST = "wss://broker.hivemq.com:8884/mqtt";
+
+  const MQTT_TOPIC = "greensense/status";
+
+
+  // ==================================================
+  // MQTT CONNECTION
+  // ==================================================
+
+  const client = mqtt.connect(MQTT_HOST, {
+    clientId: "GreenSenseDashboard-" +
+              Math.random().toString(16).substring(2),
+
+    clean: true,
+
+    connectTimeout: 5000,
+
+    reconnectPeriod: 3000
+  });
+
+
+  client.on("connect", function () {
+
+    console.log("MQTT connected");
+
+    document.getElementById("connectionText")
+      .textContent = "MQTT Connected";
+
+    document.getElementById("connectionDot")
+      .classList.add("connected");
+
+    client.subscribe(MQTT_TOPIC);
+
+  });
+
+
+  client.on("reconnect", function () {
+
+    document.getElementById("connectionText")
+      .textContent = "Reconnecting...";
+
+  });
+
+
+  client.on("offline", function () {
+
+    document.getElementById("connectionText")
+      .textContent = "MQTT Offline";
+
+    document.getElementById("connectionDot")
+      .classList.remove("connected");
+
+  });
+
+
+  client.on("error", function (error) {
+
+    console.error("MQTT Error:", error);
+
+    document.getElementById("connectionText")
+      .textContent = "Connection Error";
+
+  });
+
+
+  // ==================================================
+  // RECEIVE MQTT MESSAGE
+  // ==================================================
+
+  client.on("message", function (topic, message) {
+
+    try {
+
+      const data = JSON.parse(message.toString());
+
+      updateDashboard(data);
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "Invalid MQTT message:",
+        error
+      );
+
+    }
+
+  });
+
+
+  // ==================================================
+  // UPDATE DASHBOARD
+  // ==================================================
+
+  function updateDashboard(data) {
+
+    const soil = Number(data.soil);
+    const light = Number(data.light);
+    const temperature = Number(data.temperature);
+    const humidity = Number(data.humidity);
+
+    const status = data.status || "UNKNOWN";
+
+
+    // ---------------- SENSOR VALUES ----------------
+
+    document.getElementById("soilValue")
+      .textContent = soil;
+
+    document.getElementById("lightValue")
+      .textContent = light;
+
+    document.getElementById("temperatureValue")
+      .textContent = temperature.toFixed(1);
+
+    document.getElementById("humidityValue")
+      .textContent = humidity.toFixed(1);
+
+
+    // ---------------- CLASSIFICATION ----------------
+
+    document.getElementById("soilLevel")
+      .textContent = classifySoil(soil);
+
+    document.getElementById("lightLevel")
+      .textContent = classifyLight(light);
+
+    document.getElementById("temperatureLevel")
+      .textContent =
+        temperature > 25 ? "HIGH" : "LOW";
+
+    document.getElementById("humidityLevel")
+      .textContent =
+        humidity >= 50 ? "HIGH" : "LOW";
+
+
+    // ---------------- STATUS ----------------
+
+    document.getElementById("statusValue")
+      .textContent = formatStatus(status);
+
+
+    // ---------------- ANOMALIES ----------------
+
+    updateAnalysis(
+      soil,
+      light,
+      temperature,
+      humidity
+    );
+
+
+    // ---------------- MQTT DISPLAY ----------------
+
+    document.getElementById("mqttMessage")
+      .textContent =
+        JSON.stringify(data);
+
+
+    // ---------------- HISTORY ----------------
+
+    addHistory(
+      soil,
+      light,
+      temperature,
+      humidity,
+      status
+    );
+
+  }
+
+
+  // ==================================================
+  // SOIL CLASSIFICATION
+  // ==================================================
+
+  function classifySoil(value) {
+
+    if (value < 500)
+      return "LOW";
+
+    if (value < 1600)
+      return "LOW-MID";
+
+    if (value < 2800)
+      return "HIGH-MID";
+
+    return "HIGH";
+
+  }
+
+
+  // ==================================================
+  // LIGHT CLASSIFICATION
+  // ==================================================
+
+  function classifyLight(value) {
+
+    if (value >= 2000)
+      return "LOW";
+
+    if (value >= 500)
+      return "LOW-MID";
+
+    if (value >= 300)
+      return "HIGH-MID";
+
+    return "HIGH";
+
+  }
+
+
+  // ==================================================
+  // STATUS FORMAT
+  // ==================================================
+
+  function formatStatus(status) {
+
+    return status
+      .replaceAll("_", " ")
+      .toLowerCase()
+      .replace(/\b\w/g, c => c.toUpperCase());
+
+  }
+
+
+  // ==================================================
+  // ANALYSIS
+  // ==================================================
+
+  function updateAnalysis(
+    soil,
+    light,
+    temperature,
+    humidity
+  ) {
+
+    const soilLow = soil < 1600;
+    const soilHigh = soil >= 1600;
+
+    const lightLow = light >= 500;
+    const lightHigh = light < 500;
+
+    const temperatureLow = temperature <= 25;
+    const temperatureHigh = temperature > 25;
+
+    const humidityLow = humidity < 50;
+    const humidityHigh = humidity >= 50;
+
+
+    let anomaly = false;
+
+    let description = "";
+
+    let solution = "";
+
+
+    // Humid air + dry soil
+
+    if (soilLow && humidityHigh) {
+
+      anomaly = true;
+
+      description =
+        "Air is humid but the soil is relatively dry.";
+
+      solution =
+        "Check irrigation and soil water retention.";
+
+    }
+
+
+    // Wet soil + dry air
+
+    else if (soilHigh && humidityLow) {
+
+      anomaly = true;
+
+      description =
+        "Soil is wet while the surrounding air is dry.";
+
+      solution =
+        "Monitor evaporation and avoid unnecessary watering.";
+
+    }
+
+
+    // Hot + low light
+
+    else if (temperatureHigh && lightLow) {
+
+      anomaly = true;
+
+      description =
+        "Temperature is high despite low light conditions.";
+
+      solution =
+        "Check ventilation or possible external heat sources.";
+
+    }
+
+
+    // Cool + high light
+
+    else if (temperatureLow && lightHigh) {
+
+      anomaly = true;
+
+      description =
+        "Light intensity is high while temperature remains low.";
+
+      solution =
+        "Check for artificial lighting or active cooling.";
+
+    }
+
+
+    const anomalyBox =
+      document.getElementById("anomalyBox");
+
+    const normalBox =
+      document.getElementById("normalBox");
+
+
+    if (anomaly) {
+
+      anomalyBox.classList.add("active");
+
+      normalBox.style.display = "none";
+
+      document.getElementById(
+        "anomalyDescription"
+      ).textContent = description;
+
+      document.getElementById(
+        "anomalySolution"
+      ).textContent = solution;
+
+    }
+
+    else {
+
+      anomalyBox.classList.remove("active");
+
+      normalBox.style.display = "block";
+
+      document.getElementById(
+        "normalText"
+      ).textContent =
+        getNormalInference(
+          soilLow,
+          soilHigh,
+          lightLow,
+          lightHigh,
+          temperatureLow,
+          temperatureHigh,
+          humidityLow,
+          humidityHigh
+        );
+
+    }
+
+  }
+
+
+  // ==================================================
+  // NORMAL INFERENCE
+  // ==================================================
+
+  function getNormalInference(
+    soilLow,
+    soilHigh,
+    lightLow,
+    lightHigh,
+    temperatureLow,
+    temperatureHigh,
+    humidityLow,
+    humidityHigh
+  ) {
+
+    if (soilLow && humidityLow)
+      return "Dry conditions.";
+
+    if (soilHigh && humidityHigh)
+      return "Wet and humid conditions.";
+
+    if (temperatureHigh && lightHigh)
+      return "Warm and well-lit conditions.";
+
+    if (temperatureLow && lightLow)
+      return "Cool and low-light conditions.";
+
+    return "Normal environmental conditions.";
+
+  }
+
+
+  // ==================================================
+  // HISTORY
+  // ==================================================
+
+  function addHistory(
+    soil,
+    light,
+    temperature,
+    humidity,
+    status
+  ) {
+
+    const tbody =
+      document.getElementById("historyBody");
+
+
+    const row =
+      document.createElement("tr");
+
+
+    const time =
+      new Date().toLocaleTimeString();
+
+
+    row.innerHTML = `
+      <td>${time}</td>
+      <td>${soil}</td>
+      <td>${light}</td>
+      <td>${temperature.toFixed(1)}°C</td>
+      <td>${humidity.toFixed(1)}%</td>
+      <td>${formatStatus(status)}</td>
+    `;
+
+
+    tbody.prepend(row);
+
+
+    // Keep only the latest 10 readings
+
+    while (tbody.children.length > 10) {
+
+      tbody.removeChild(
+        tbody.lastChild
+      );
+
+    }
+
+  }
+
+</script>
+
+</body>
+</html>
