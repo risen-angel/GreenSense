@@ -31,7 +31,7 @@ PubSubClient mqttClient(espClient);
 #define LIGHT_LOW_THRESHOLD 500
 #define LIGHT_HIGH_THRESHOLD 2000
 
-#define TEMP_THRESHOLD 25.0
+#define TEMP_THRESHOLD 22.0
 
 #define HUMIDITY_THRESHOLD 50.0
 
