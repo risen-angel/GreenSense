@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>GreenSense Dashboard</title>
+  <title>GreenSense</title>
 
   <!-- MQTT.js -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -253,207 +253,254 @@
         padding: 0 15px;
       }
     }
-  </style>
+  
+    .nav { background:white; border-bottom:1px solid #e5e7eb; padding:12px 40px; display:flex; justify-content:center; gap:12px; position:sticky; top:0; z-index:10; flex-wrap:wrap; }
+    .nav button { border:none; background:transparent; color:#4b5563; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
+    .nav button:hover, .nav button.active { background:#edf7ef; color:#27643a; }
+    .page { display:none; } .page.active { display:block; }
+    .section-subtitle { color:#6b7280; margin-bottom:22px; font-size:14px; }
+    .service-card { max-width:700px; margin:0 auto; background:white; border-radius:16px; padding:30px; box-shadow:0 5px 20px rgba(0,0,0,.06); border:1px solid #e5e7eb; }
+    .service-card h2 { color:#27643a; margin-bottom:10px; }
+    .service-card p { color:#6b7280; line-height:1.5; margin-bottom:22px; }
+    .select-label { display:block; font-size:14px; font-weight:bold; margin-bottom:8px; }
+    select { width:100%; padding:13px; border:1px solid #d1d5db; border-radius:9px; font-size:15px; background:white; }
+    .placeholder-box { margin-top:22px; padding:18px; background:#f4f7f5; border-radius:10px; color:#6b7280; text-align:center; }
+    .plant-analysis { margin-top:22px; }
+    .analysis-header { display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:18px; flex-wrap:wrap; }
+    .score-box { background:#edf7ef; border-left:5px solid #3b8c55; border-radius:12px; padding:16px 20px; text-align:center; min-width:145px; }
+    .score-label { display:block; color:#6b7280; font-size:11px; font-weight:bold; letter-spacing:.5px; margin-bottom:4px; }
+    .score-value { font-size:30px; font-weight:bold; color:#27643a; }
+    .plant-result-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .plant-result-card { border:1px solid #e5e7eb; border-radius:12px; padding:15px; background:#fff; }
+    .plant-result-card h3 { font-size:14px; margin-bottom:9px; }
+    .result-status { font-size:13px; font-weight:bold; margin-bottom:5px; }
+    .result-status.good { color:#27643a; }
+    .result-status.bad { color:#a15c00; }
+    .result-detail { color:#6b7280; font-size:12px; line-height:1.45; }
+    .plant-summary { margin-top:16px; padding:16px; border-radius:12px; background:#f4f7f5; line-height:1.5; font-size:14px; }
+    .plant-summary strong { display:block; margin-bottom:6px; color:#27643a; }
+    .live-note { margin-top:14px; font-size:12px; color:#6b7280; }
+    @media (max-width:550px) { .plant-result-grid { grid-template-columns:1fr; } .score-box { width:100%; } }
+    .history { overflow-x:auto; } table { min-width:750px; }
+    .grow-recommendation { margin-top:22px; }
+    .recommendation-main { display:flex; justify-content:space-between; align-items:center; gap:18px; flex-wrap:wrap; }
+    .recommendation-card { background:#edf7ef; border-left:5px solid #3b8c55; border-radius:12px; padding:18px; flex:1; min-width:240px; }
+    .recommendation-card h3 { color:#27643a; margin-bottom:7px; font-size:20px; }
+    .recommendation-card p { color:#4b5563; font-size:13px; line-height:1.5; }
+    .recommendation-score { text-align:center; min-width:125px; padding:14px; background:#f4f7f5; border-radius:12px; }
+    .recommendation-score span { display:block; font-size:27px; font-weight:bold; color:#27643a; }
+    .recommendation-score small { color:#6b7280; font-size:11px; }
+    .grow-table { margin-top:18px; overflow-x:auto; }
+    .grow-table table { min-width:650px; }
+    .grow-table .best-row { background:#edf7ef; }
+    .grow-table .score-cell { font-weight:bold; color:#27643a; }
+    .grow-note { margin-top:14px; color:#6b7280; font-size:12px; line-height:1.5; }
+
+    @media (max-width:550px) { .nav {padding:10px;} .nav button {font-size:12px; padding:9px 10px;} }
+</style>
 </head>
 
 <body>
 
-  <!-- HEADER -->
-  <header class="header">
+<header class="header"><div class="brand"><h1>🌱 GreenSense</h1><p>Smart Environmental Monitoring System</p></div><div class="connection"><span class="dot" id="connectionDot"></span><span id="connectionText">Connecting...</span></div></header>
 
-    <div class="brand">
-      <h1>🌱 GreenSense</h1>
-      <p>Smart Environmental Monitoring System</p>
+<nav class="nav">
+<button class="active" onclick="showPage('livePage', this)">Live Environmental Data</button>
+<button onclick="showPage('plantPage', this)">🌱 Check My Plant</button>
+<button onclick="showPage('growPage', this)">🌿 What Should I Grow?</button>
+<button onclick="showPage('historyPage', this)">📊 History & Analysis</button>
+</nav>
+
+<main class="container">
+<section id="livePage" class="page active">
+<h2 class="section-title">Live Environmental Data</h2><p class="section-subtitle">Real-time conditions received from your GreenSense device.</p>
+<div class="cards">
+<div class="card"><div class="card-header"><span class="label">Soil Moisture</span><span class="icon">🌱</span></div><div class="value" id="soilValue">--</div><div class="level" id="soilLevel">Waiting for data</div></div>
+<div class="card"><div class="card-header"><span class="label">Light</span><span class="icon">☀️</span></div><div class="value" id="lightValue">--</div><div class="level" id="lightLevel">Waiting for data</div></div>
+<div class="card"><div class="card-header"><span class="label">Temperature</span><span class="icon">🌡️</span></div><div class="value"><span id="temperatureValue">--</span><span class="unit">°C</span></div><div class="level" id="temperatureLevel">Waiting for data</div></div>
+<div class="card"><div class="card-header"><span class="label">Humidity</span><span class="icon">💧</span></div><div class="value"><span id="humidityValue">--</span><span class="unit">%</span></div><div class="level" id="humidityLevel">Waiting for data</div></div>
+</div>
+<div class="main-grid"><div class="panel"><h2>Environmental Status</h2><div class="status"><div class="status-title">CURRENT INFERENCE</div><div class="status-value" id="statusValue">Waiting for sensor data</div></div></div>
+<div class="panel"><h2>System Analysis</h2><div class="normal" id="normalBox"><strong>System Normal</strong><p id="normalText">Waiting for sensor data...</p></div><div class="anomaly" id="anomalyBox"><h3>⚠ Anomaly Detected</h3><p><strong>Description:</strong> <span id="anomalyDescription"></span></p><p><strong>Suggested solution:</strong> <span id="anomalySolution"></span></p></div></div></div>
+<div class="mqtt-box"><div>MQTT Topic: greensense/status</div><div id="mqttMessage">Waiting for MQTT message...</div></div>
+</section>
+
+<section id="plantPage" class="page">
+<h2 class="section-title">Check My Plant</h2>
+<p class="section-subtitle">Check whether your current environmental conditions are suitable for your plant.</p>
+<div class="service-card">
+  <h2>🌱 Check Your Plant</h2>
+  <p>Select the plant you're growing. GreenSense will compare it with the current live environmental data.</p>
+  <label class="select-label" for="plantSelect">Select your plant</label>
+  <select id="plantSelect">
+    <option value="">Choose a plant...</option>
+    <option value="aloe">Aloe Vera</option>
+    <option value="basil">Basil</option>
+    <option value="mint">Mint</option>
+    <option value="tomato">Tomato</option>
+    <option value="lavender">Lavender</option>
+  </select>
+
+  <div id="plantAnalysis" class="plant-analysis" style="display:none;">
+    <div class="analysis-header">
+      <div>
+        <h2 id="selectedPlantName">Plant Analysis</h2>
+        <p class="live-note">Analysis is based on the latest live GreenSense sensor reading.</p>
+      </div>
+      <div class="score-box">
+        <span class="score-label">PLANT CONDITION</span>
+        <span class="score-value" id="plantScore">--/10</span>
+      </div>
     </div>
 
-    <div class="connection">
-      <span class="dot" id="connectionDot"></span>
-      <span id="connectionText">Connecting...</span>
+    <div class="plant-result-grid">
+      <div class="plant-result-card">
+        <h3>🌱 Soil Moisture</h3>
+        <div id="plantSoilStatus" class="result-status">Waiting...</div>
+        <div id="plantSoilDetail" class="result-detail"></div>
+      </div>
+      <div class="plant-result-card">
+        <h3>☀️ Light</h3>
+        <div id="plantLightStatus" class="result-status">Waiting...</div>
+        <div id="plantLightDetail" class="result-detail"></div>
+      </div>
+      <div class="plant-result-card">
+        <h3>🌡️ Temperature</h3>
+        <div id="plantTempStatus" class="result-status">Waiting...</div>
+        <div id="plantTempDetail" class="result-detail"></div>
+      </div>
+      <div class="plant-result-card">
+        <h3>💧 Humidity</h3>
+        <div id="plantHumidityStatus" class="result-status">Waiting...</div>
+        <div id="plantHumidityDetail" class="result-detail"></div>
+      </div>
     </div>
 
-  </header>
+    <div class="plant-summary">
+      <strong>Plant Analysis</strong>
+      <span id="plantAnalysisText">Waiting for live sensor data...</span>
+    </div>
+  </div>
 
+  <div id="plantWaiting" class="placeholder-box">Select a plant to begin the analysis.</div>
+</div>
+</section>
 
-  <main class="container">
+<section id="growPage" class="page">
+  <h2 class="section-title">What Should I Grow?</h2>
+  <p class="section-subtitle">
+    Find the plant that best matches your current environmental conditions.
+  </p>
 
-    <h2 class="section-title">Live Environmental Data</h2>
+  <div class="service-card">
+    <h2>🌿 Find Your Best Plant</h2>
+    <p>
+      GreenSense compares the latest soil, light, temperature and humidity
+      readings against all five supported plants and recommends the best match.
+    </p>
 
-    <!-- SENSOR CARDS -->
-
-    <div class="cards">
-
-      <div class="card">
-        <div class="card-header">
-          <span class="label">Soil Moisture</span>
-          <span class="icon">🌱</span>
-        </div>
-
-        <div class="value" id="soilValue">--</div>
-
-        <div class="level" id="soilLevel">
-          Waiting for data
-        </div>
-      </div>
-
-
-      <div class="card">
-        <div class="card-header">
-          <span class="label">Light</span>
-          <span class="icon">☀️</span>
-        </div>
-
-        <div class="value" id="lightValue">--</div>
-
-        <div class="level" id="lightLevel">
-          Waiting for data
-        </div>
-      </div>
-
-
-      <div class="card">
-        <div class="card-header">
-          <span class="label">Temperature</span>
-          <span class="icon">🌡️</span>
-        </div>
-
-        <div class="value">
-          <span id="temperatureValue">--</span>
-          <span class="unit">°C</span>
-        </div>
-
-        <div class="level" id="temperatureLevel">
-          Waiting for data
-        </div>
-      </div>
-
-
-      <div class="card">
-        <div class="card-header">
-          <span class="label">Humidity</span>
-          <span class="icon">💧</span>
-        </div>
-
-        <div class="value">
-          <span id="humidityValue">--</span>
-          <span class="unit">%</span>
-        </div>
-
-        <div class="level" id="humidityLevel">
-          Waiting for data
-        </div>
-      </div>
-
+    <div id="growWaiting" class="placeholder-box">
+      Waiting for live sensor data...
     </div>
 
+    <div id="growRecommendation" class="grow-recommendation" style="display:none;">
 
-    <!-- INFERENCE + ANOMALY -->
-
-    <div class="main-grid">
-
-      <div class="panel">
-
-        <h2>Environmental Status</h2>
-
-        <div class="status">
-
-          <div class="status-title">
-            CURRENT INFERENCE
-          </div>
-
-          <div class="status-value" id="statusValue">
-            Waiting for sensor data
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="panel">
-
-        <h2>System Analysis</h2>
-
-        <div class="normal" id="normalBox">
-
-          <strong>System Normal</strong>
-
-          <p id="normalText">
-            Waiting for sensor data...
+      <div class="recommendation-main">
+        <div class="recommendation-card">
+          <h3 id="recommendedPlantName">--</h3>
+          <p id="recommendedPlantText">
+            GreenSense is analyzing your current environment.
           </p>
-
         </div>
 
-
-        <div class="anomaly" id="anomalyBox">
-
-          <h3>⚠ Anomaly Detected</h3>
-
-          <p>
-            <strong>Description:</strong>
-            <span id="anomalyDescription"></span>
-          </p>
-
-          <p>
-            <strong>Suggested solution:</strong>
-            <span id="anomalySolution"></span>
-          </p>
-
+        <div class="recommendation-score">
+          <span id="recommendedPlantScore">--/10</span>
+          <small>BEST MATCH</small>
         </div>
-
       </div>
 
-    </div>
-
-
-    <!-- HISTORY -->
-
-    <div class="panel history">
-
-      <h2>Recent Readings</h2>
-
-      <table>
-
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Soil</th>
-            <th>Light</th>
-            <th>Temp.</th>
-            <th>Humidity</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-
-        <tbody id="historyBody">
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-
-    <!-- MQTT -->
-
-    <div class="mqtt-box">
-
-      <div>MQTT Topic: greensense/status</div>
-
-      <div id="mqttMessage">
-        Waiting for MQTT message...
+      <div class="grow-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Plant</th>
+              <th>Soil</th>
+              <th>Light</th>
+              <th>Temperature</th>
+              <th>Humidity</th>
+              <th>Overall</th>
+            </tr>
+          </thead>
+          <tbody id="growResultsBody"></tbody>
+        </table>
       </div>
 
+      <p class="grow-note">
+        Scores are formula-based and range continuously from 0 to 10.
+        The overall score is the average of the four environmental parameter scores.
+      </p>
+
     </div>
+  </div>
+</section>
 
-  </main>
-
-
-  <footer class="footer">
-    GreenSense • ESP32 + Wokwi + MQTT
-  </footer>
-
-
+<section id="historyPage" class="page"><h2 class="section-title">History & Analysis</h2><p class="section-subtitle">Review past environmental readings and GreenSense system analysis.</p><div class="panel history"><h2>Past Environmental Data</h2><table><thead><tr><th>Time</th><th>Soil</th><th>Light</th><th>Temp.</th><th>Humidity</th><th>Status</th><th>System Analysis</th></tr></thead><tbody id="historyBody"></tbody></table></div></section>
+</main>
+<footer class="footer">GreenSense • ESP32 + Wokwi + MQTT</footer>
+<script>function showPage(pageId, button){document.querySelectorAll('.page').forEach(page=>page.classList.remove('active'));document.getElementById(pageId).classList.add('active');document.querySelectorAll('.nav button').forEach(btn=>btn.classList.remove('active'));button.classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}</script>
 <script>
+
+  // ==================================================
+  // PLANT DATABASE
+  // ==================================================
+
+  const plants = {
+
+    aloe: {
+      name: "Aloe Vera",
+      soil: ["LOW"],
+      light: ["HIGH"],
+      temperature: [13, 27],
+      humidity: [30, 50]
+    },
+
+    basil: {
+      name: "Basil",
+      soil: ["HIGH-MID"],
+      light: ["HIGH"],
+      temperature: [21, 30],
+      humidity: [40, 70]
+    },
+
+    mint: {
+      name: "Mint",
+      soil: ["HIGH"],
+      light: ["HIGH-MID", "HIGH"],
+      temperature: [15, 25],
+      humidity: [50, 70]
+    },
+
+    tomato: {
+      name: "Tomato",
+      soil: ["HIGH-MID"],
+      light: ["HIGH"],
+      temperature: [18, 30],
+      humidity: [50, 70]
+    },
+
+    lavender: {
+      name: "Lavender",
+      soil: ["LOW-MID"],
+      light: ["HIGH"],
+      temperature: [15, 30],
+      humidity: [30, 50]
+    }
+
+  };
+
+  // Latest live sensor values received through MQTT
+  let latestSensorData = null;
+  let selectedPlant = null;
 
   // ==================================================
   // MQTT CONFIGURATION
@@ -563,6 +610,23 @@
 
     const status = data.status || "UNKNOWN";
 
+    // Store the latest live reading for plant analysis
+    latestSensorData = {
+      soil: soil,
+      light: light,
+      temperature: temperature,
+      humidity: humidity
+    };
+
+    // Recalculate the selected plant whenever a new MQTT reading arrives
+    if (selectedPlant) {
+      analyzeSelectedPlant();
+    }
+
+    // Recalculate plant recommendations using the newest
+    // sensor values.
+    updateGrowRecommendation();
+
 
     // ---------------- SENSOR VALUES ----------------
 
@@ -630,6 +694,589 @@
     );
 
   }
+
+
+  // ==================================================
+  // CHECK MY PLANT - LIVE ANALYSIS
+  // ==================================================
+
+  // ==================================================
+  // CHECK MY PLANT - FORMULA-BASED ANALYSIS
+  // ==================================================
+
+  /*
+     Every sensor reading is used directly.
+
+     Soil  : raw ADC value, 0-4095
+     Light : raw ADC value, 0-4095
+     Temp  : actual temperature in °C
+     Humid : actual humidity in %
+
+     Each parameter receives a continuous score from 0-10.
+     The final plant condition score is the average of the
+     four parameter scores, so it can be any value from 0-10.
+  */
+
+
+  function getRangeScore(value, min, max) {
+
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+
+    // Any value inside the preferred range gets the
+    // maximum score.
+    if (value >= min && value <= max) {
+      return 10;
+    }
+
+    // Distance from the closest edge of the ideal range.
+    const distance = value < min
+      ? min - value
+      : value - max;
+
+    // The fall-off distance is based on the size of the
+    // preferred range, making the formula proportional
+    // rather than using fixed score steps.
+    const rangeWidth = Math.max(max - min, 1);
+
+    const score = 10 * (1 - distance / rangeWidth);
+
+    return Math.max(0, Math.min(10, score));
+  }
+
+
+  function getCategoryInterval(category, sensorType) {
+
+    if (sensorType === "soil") {
+
+      return {
+        "LOW": [0, 499],
+        "LOW-MID": [500, 1599],
+        "HIGH-MID": [1600, 2799],
+        "HIGH": [2800, 4095]
+      }[category];
+
+    }
+
+    if (sensorType === "light") {
+
+      // Wokwi LDR classification is inverted:
+      // lower ADC = higher light.
+      return {
+        "HIGH": [0, 299],
+        "HIGH-MID": [300, 499],
+        "LOW-MID": [500, 1999],
+        "LOW": [2000, 4095]
+      }[category];
+
+    }
+
+    return null;
+  }
+
+
+  function getCategoryScore(value, idealCategories, sensorType) {
+
+    if (!Number.isFinite(value) ||
+        !idealCategories ||
+        idealCategories.length === 0) {
+      return 0;
+    }
+
+    let bestScore = 0;
+
+    idealCategories.forEach(function(category) {
+
+      const interval =
+        getCategoryInterval(category, sensorType);
+
+      if (!interval) {
+        return;
+      }
+
+      const min = interval[0];
+      const max = interval[1];
+
+      let distance = 0;
+
+      if (value < min) {
+        distance = min - value;
+      } else if (value > max) {
+        distance = value - max;
+      }
+
+      // Inside an ideal category.
+      if (distance === 0) {
+        bestScore = 10;
+        return;
+      }
+
+      // Use the width of that category as the fall-off
+      // distance. This gives a continuous score for every
+      // possible ADC reading.
+      const categoryWidth = max - min + 1;
+
+      const score =
+        10 * (1 - distance / categoryWidth);
+
+      bestScore = Math.max(
+        bestScore,
+        Math.max(0, Math.min(10, score))
+      );
+
+    });
+
+    return bestScore;
+  }
+
+
+  function analyzePlant(
+    plant,
+    soil,
+    light,
+    temperature,
+    humidity
+  ) {
+
+    // -----------------------------------------------
+    // 1. Calculate individual parameter scores
+    // -----------------------------------------------
+
+    const soilScore = getCategoryScore(
+      soil,
+      plant.soil,
+      "soil"
+    );
+
+    const lightScore = getCategoryScore(
+      light,
+      plant.light,
+      "light"
+    );
+
+    const temperatureScore = getRangeScore(
+      temperature,
+      plant.temperature[0],
+      plant.temperature[1]
+    );
+
+    const humidityScore = getRangeScore(
+      humidity,
+      plant.humidity[0],
+      plant.humidity[1]
+    );
+
+
+    // -----------------------------------------------
+    // 2. Overall score
+    // -----------------------------------------------
+
+    const score =
+      (
+        soilScore +
+        lightScore +
+        temperatureScore +
+        humidityScore
+      ) / 4;
+
+    const finalScore =
+      Math.max(0, Math.min(10, score));
+
+
+    // -----------------------------------------------
+    // 3. Display final score
+    // -----------------------------------------------
+
+    const scoreElement =
+      document.getElementById("plantScore");
+
+    if (scoreElement) {
+      scoreElement.textContent =
+        finalScore.toFixed(2) + "/10";
+    }
+
+
+    // -----------------------------------------------
+    // 4. Display individual parameter analysis
+    // -----------------------------------------------
+
+    updatePlantParameter(
+      "plantSoilResult",
+      soilScore,
+      classifySoil(soil),
+      plant.soil.join(" / ")
+    );
+
+    updatePlantParameter(
+      "plantLightResult",
+      lightScore,
+      classifyLight(light),
+      plant.light.join(" / ")
+    );
+
+    updatePlantParameter(
+      "plantTemperatureResult",
+      temperatureScore,
+      temperature.toFixed(1) + "°C",
+      plant.temperature[0] +
+      "–" +
+      plant.temperature[1] +
+      "°C"
+    );
+
+    updatePlantParameter(
+      "plantHumidityResult",
+      humidityScore,
+      humidity.toFixed(1) + "%",
+      plant.humidity[0] +
+      "–" +
+      plant.humidity[1] +
+      "%"
+    );
+
+
+    // -----------------------------------------------
+    // 5. Overall interpretation
+    // -----------------------------------------------
+
+    const analysisElement =
+      document.getElementById("plantAnalysisText");
+
+    if (!analysisElement) {
+      return;
+    }
+
+    if (finalScore >= 9) {
+
+      analysisElement.textContent =
+        plant.name +
+        " is highly suitable for the current environmental conditions.";
+
+    } else if (finalScore >= 7) {
+
+      analysisElement.textContent =
+        plant.name +
+        " is well suited to the current environment, although some conditions could be improved.";
+
+    } else if (finalScore >= 5) {
+
+      analysisElement.textContent =
+        plant.name +
+        " can grow under the current conditions, but several environmental parameters need improvement.";
+
+    } else if (finalScore >= 3) {
+
+      analysisElement.textContent =
+        plant.name +
+        " is a weak match for the current environment. Consider adjusting the conditions.";
+
+    } else {
+
+      analysisElement.textContent =
+        plant.name +
+        " is currently not well suited to the measured environmental conditions.";
+
+    }
+  }
+
+
+  // This is the service controller.
+  // It runs whenever the user selects a plant and whenever
+  // a new MQTT sensor reading arrives.
+  function analyzeSelectedPlant() {
+
+    if (!selectedPlant || !latestSensorData) {
+      return;
+    }
+
+    const data = latestSensorData;
+    const plant = plants[selectedPlant];
+
+    document.getElementById("plantAnalysis").style.display = "block";
+    document.getElementById("plantWaiting").style.display = "none";
+
+    document.getElementById("selectedPlantName").textContent =
+      plant.name + " Analysis";
+
+    analyzePlant(
+      plant,
+      data.soil,
+      data.light,
+      data.temperature,
+      data.humidity
+    );
+  }
+
+
+  function updatePlantParameter(
+    statusId,
+    score,
+    current,
+    ideal
+  ) {
+
+    const statusMap = {
+      "plantSoilResult":
+        ["plantSoilStatus", "plantSoilDetail"],
+
+      "plantLightResult":
+        ["plantLightStatus", "plantLightDetail"],
+
+      "plantTemperatureResult":
+        ["plantTempStatus", "plantTempDetail"],
+
+      "plantHumidityResult":
+        ["plantHumidityStatus", "plantHumidityDetail"]
+    };
+
+    const ids = statusMap[statusId];
+
+    if (!ids) {
+      return;
+    }
+
+    const roundedScore =
+      Math.max(0, Math.min(10, score));
+
+    let statusText;
+    let isGood;
+
+    if (roundedScore >= 9) {
+      statusText = "✓ Ideal";
+      isGood = true;
+
+    } else if (roundedScore >= 7) {
+      statusText = "✓ Good";
+      isGood = true;
+
+    } else if (roundedScore >= 5) {
+      statusText = "• Moderate";
+      isGood = false;
+
+    } else {
+      statusText = "⚠ Needs Attention";
+      isGood = false;
+    }
+
+    const statusElement =
+      document.getElementById(ids[0]);
+
+    const detailElement =
+      document.getElementById(ids[1]);
+
+    if (statusElement) {
+
+      statusElement.textContent =
+        statusText +
+        " (" +
+        roundedScore.toFixed(2) +
+        "/10)";
+
+      statusElement.className =
+        "result-status " +
+        (isGood ? "good" : "bad");
+    }
+
+    if (detailElement) {
+
+      detailElement.textContent =
+        "Current: " +
+        current +
+        " | Ideal: " +
+        ideal;
+    }
+  }
+
+
+
+  // ==================================================
+  // WHAT SHOULD I GROW? - PLANT RECOMMENDATION
+  // ==================================================
+
+  function getPlantConditionScores(plant, data) {
+
+    const soilScore = getCategoryScore(
+      data.soil,
+      plant.soil,
+      "soil"
+    );
+
+    const lightScore = getCategoryScore(
+      data.light,
+      plant.light,
+      "light"
+    );
+
+    const temperatureScore = getRangeScore(
+      data.temperature,
+      plant.temperature[0],
+      plant.temperature[1]
+    );
+
+    const humidityScore = getRangeScore(
+      data.humidity,
+      plant.humidity[0],
+      plant.humidity[1]
+    );
+
+    const overall =
+      (
+        soilScore +
+        lightScore +
+        temperatureScore +
+        humidityScore
+      ) / 4;
+
+    return {
+      soil: soilScore,
+      light: lightScore,
+      temperature: temperatureScore,
+      humidity: humidityScore,
+      overall: overall
+    };
+  }
+
+
+  function updateGrowRecommendation() {
+
+    const waitingElement =
+      document.getElementById("growWaiting");
+
+    const recommendationElement =
+      document.getElementById("growRecommendation");
+
+    if (!latestSensorData) {
+
+      waitingElement.style.display = "block";
+      recommendationElement.style.display = "none";
+
+      return;
+    }
+
+    const results = [];
+
+    Object.keys(plants).forEach(function(key) {
+
+      const plant = plants[key];
+
+      const scores =
+        getPlantConditionScores(
+          plant,
+          latestSensorData
+        );
+
+      results.push({
+        key: key,
+        plant: plant,
+        scores: scores
+      });
+
+    });
+
+
+    // Highest overall environmental compatibility first.
+    results.sort(function(a, b) {
+      return b.scores.overall - a.scores.overall;
+    });
+
+
+    const best = results[0];
+
+    waitingElement.style.display = "none";
+    recommendationElement.style.display = "block";
+
+    document.getElementById("recommendedPlantName").textContent =
+      best.plant.name;
+
+    document.getElementById("recommendedPlantScore").textContent =
+      best.scores.overall.toFixed(2) + "/10";
+
+
+    let recommendationText;
+
+    if (best.scores.overall >= 9) {
+
+      recommendationText =
+        "This is an excellent match for your current environmental conditions.";
+
+    } else if (best.scores.overall >= 7) {
+
+      recommendationText =
+        "This is the best match among the supported plants, with generally suitable conditions.";
+
+    } else if (best.scores.overall >= 5) {
+
+      recommendationText =
+        "This is the best available match, although some environmental conditions could be improved.";
+
+    } else {
+
+      recommendationText =
+        "This is the best available match, but the current environment is not strongly suited to any of the supported plants.";
+
+    }
+
+    document.getElementById("recommendedPlantText").textContent =
+      recommendationText;
+
+
+    const tbody =
+      document.getElementById("growResultsBody");
+
+    tbody.innerHTML = "";
+
+
+    results.forEach(function(result, index) {
+
+      const row =
+        document.createElement("tr");
+
+      if (index === 0) {
+        row.className = "best-row";
+      }
+
+      row.innerHTML = `
+        <td><strong>${result.plant.name}</strong></td>
+        <td>${result.scores.soil.toFixed(2)}/10</td>
+        <td>${result.scores.light.toFixed(2)}/10</td>
+        <td>${result.scores.temperature.toFixed(2)}/10</td>
+        <td>${result.scores.humidity.toFixed(2)}/10</td>
+        <td class="score-cell">${result.scores.overall.toFixed(2)}/10</td>
+      `;
+
+      tbody.appendChild(row);
+
+    });
+  }
+
+
+  // ==================================================
+  // PLANT SELECTION
+  // ==================================================
+
+  document.getElementById("plantSelect").addEventListener("change", function () {
+
+    selectedPlant = this.value;
+
+    if (!selectedPlant) {
+      document.getElementById("plantAnalysis").style.display = "none";
+      document.getElementById("plantWaiting").style.display = "block";
+      return;
+    }
+
+    if (latestSensorData) {
+      analyzeSelectedPlant();
+    } else {
+      document.getElementById("plantAnalysis").style.display = "block";
+      document.getElementById("plantWaiting").style.display = "none";
+      document.getElementById("selectedPlantName").textContent =
+        plants[selectedPlant].name + " Analysis";
+      document.getElementById("plantScore").textContent = "--/10";
+      document.getElementById("plantAnalysisText").textContent =
+        "Waiting for live sensor data from GreenSense...";
+    }
+  });
 
 
   // ==================================================
@@ -907,6 +1554,5 @@
   }
 
 </script>
-
 </body>
 </html>
